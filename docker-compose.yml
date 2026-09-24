@@ -1,0 +1,19 @@
+services:
+  dongy-pay:
+    build:
+      context: .
+      args:
+        VITE_SUPABASE_PROJECT_ID: ${VITE_SUPABASE_PROJECT_ID}
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+        VITE_SUPABASE_PUBLISHABLE_KEY: ${VITE_SUPABASE_PUBLISHABLE_KEY}
+    container_name: dongy-pay
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      SUPABASE_PROJECT_ID: ${SUPABASE_PROJECT_ID}
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_PUBLISHABLE_KEY: ${SUPABASE_PUBLISHABLE_KEY}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+    ports:
+      - "127.0.0.1:3000:3000"
