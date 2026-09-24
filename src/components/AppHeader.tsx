@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { useI18n } from "@/i18n/LanguageProvider";
-import dongyLogo from "@/assets/dongy-logo.svg";
+import { dongyLogo } from "@/assets/dongy-logo-data";
 
 type Props = {
   subtitle?: string;
