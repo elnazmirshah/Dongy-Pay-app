@@ -61,8 +61,9 @@ export function useBill(tableNumber: string) {
           setSnapshot((prev) => {
             if (!prev) return prev;
             const next = { ...prev, items: [...prev.items] };
-          const newRow = (payload.new ?? null) as Record<string, unknown> | null;
+            const newRow = (payload.new ?? null) as Record<string, unknown> | null;
             const oldRow = (payload.old ?? null) as Record<string, unknown> | null;
+
             if (payload.eventType === "INSERT" && newRow) {
               next.items.push({
                 ...newRow,
@@ -74,11 +75,12 @@ export function useBill(tableNumber: string) {
                 next.items[idx] = {
                   ...newRow,
                   unit_price: Number(newRow.unit_price),
-                } as unknown as (typeof next.items)[number]);
+                } as unknown as (typeof next.items)[number];
               }
             } else if (payload.eventType === "DELETE" && oldRow) {
               next.items = next.items.filter((i) => i.id !== (oldRow.id as string));
             }
+
             next.items.sort((a, b) => a.sort_order - b.sort_order);
             return next;
           });
