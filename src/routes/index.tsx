@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { QrCode, Sparkles, Split, ScanLine } from "lucide-react";
 import { useI18n } from "@/i18n/LanguageProvider";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-import dongyLogo from "@/assets/dongy-logo.svg";
+import { dongyLogo } from "@/assets/dongy-logo-data";
 
 export const Route = createFileRoute("/")({
   component: Index,
