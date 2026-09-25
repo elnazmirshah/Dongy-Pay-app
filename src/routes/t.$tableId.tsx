@@ -72,7 +72,8 @@ function TablePage() {
     if (mode === "full") {
       const next = new Map<string, number>();
       snapshot.items.forEach((item) => {
-        if (!item.paid_by) next.set(item.id, item.qty);
+        const remainingQty = Math.max(0, item.qty - item.paid_qty);
+        if (remainingQty > 0) next.set(item.id, remainingQty);
       });
       setSelectedQty(next);
     } else if (mode === "item") {
@@ -87,11 +88,12 @@ function TablePage() {
       let changed = false;
       previous.forEach((qty, id) => {
         const item = snapshot.items.find((candidate) => candidate.id === id);
-        if (!item || item.paid_by) {
+        const remainingQty = item ? Math.max(0, item.qty - item.paid_qty) : 0;
+        if (!item || remainingQty <= 0) {
           next.delete(id);
           changed = true;
-        } else if (qty > item.qty) {
-          next.set(id, item.qty);
+        } else if (qty > remainingQty) {
+          next.set(id, remainingQty);
           changed = true;
         }
       });
@@ -105,10 +107,9 @@ function TablePage() {
     let paidTotal = 0;
     let yourSubtotal = 0;
     snapshot.items.forEach((item) => {
-      const line = item.unit_price * item.qty;
-      billTotal += line;
-      if (item.paid_by) paidTotal += line;
-      else yourSubtotal += item.unit_price * (selectedQty.get(item.id) ?? 0);
+      billTotal += item.unit_price * item.qty;
+      paidTotal += item.unit_price * item.paid_qty;
+      yourSubtotal += item.unit_price * (selectedQty.get(item.id) ?? 0);
     });
     return { billTotal, paidTotal, remaining: billTotal - paidTotal, yourSubtotal };
   }, [snapshot, selectedQty]);
@@ -121,8 +122,14 @@ function TablePage() {
 
   const itemIdsForPayment = useMemo(() => {
     if (!snapshot) return [];
-    if (mode === "equal") return snapshot.items.filter((item) => !item.paid_by).map((item) => item.id);
-    return Array.from(selectedQty.entries()).filter(([, qty]) => qty > 0).map(([id]) => id);
+    if (mode === "equal") {
+      return snapshot.items.flatMap((item) =>
+        Array.from({ length: Math.max(0, item.qty - item.paid_qty) }, () => item.id),
+      );
+    }
+    return Array.from(selectedQty.entries()).flatMap(([id, qty]) =>
+      Array.from({ length: Math.max(0, qty) }, () => id),
+    );
   }, [snapshot, mode, selectedQty]);
 
   const goNext = (next: Step) => {
@@ -141,8 +148,11 @@ function TablePage() {
       return;
     }
 
-    const unpaidIds = snapshot.items.filter((item) => !item.paid_by).map((item) => item.id);
-    const completesBill = unpaidIds.length > 0 && unpaidIds.every((id) => itemIdsForPayment.includes(id));
+    const remainingUnitCount = snapshot.items.reduce(
+      (sum, item) => sum + Math.max(0, item.qty - item.paid_qty),
+      0,
+    );
+    const completesBill = remainingUnitCount > 0 && itemIdsForPayment.length === remainingUnitCount;
 
     setPaying(true);
     try {
@@ -292,8 +302,9 @@ function TablePage() {
                         onChangeQty={(qty) =>
                           setSelectedQty((previous) => {
                             const next = new Map(previous);
+                            const remainingQty = Math.max(0, item.qty - item.paid_qty);
                             if (qty <= 0) next.delete(item.id);
-                            else next.set(item.id, Math.min(qty, item.qty));
+                            else next.set(item.id, Math.min(qty, remainingQty));
                             return next;
                           })
                         }
