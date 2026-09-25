@@ -122,7 +122,7 @@ function ReceiptPage() {
           )}
           {rating > 0 && rating < 5 && (
             <p className="mt-3 text-xs text-muted-foreground">
-              Thanks — we'll share your feedback with the team.
+              Thanks. We'll share your feedback with the team.
             </p>
           )}
         </motion.div>
