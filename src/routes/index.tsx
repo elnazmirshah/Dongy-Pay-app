@@ -8,7 +8,7 @@ export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
     meta: [
-      { title: "Dongy — Split. Pay. Enjoy together." },
+      { title: "Dongy | Split. Pay. Enjoy together." },
       { name: "description", content: "Scan the QR at your table, split the bill smartly with friends, and pay with Apple Pay, Google Pay or card." },
     ],
   }),
@@ -31,7 +31,7 @@ function Index() {
           </Link>
         </section>
         <section className="grid grid-cols-1 gap-3">
-          <Feature icon={<ScanLine className="h-5 w-5" />} title="Scan your table QR" body="Your live bill appears in seconds — no waiting for the server." />
+          <Feature icon={<ScanLine className="h-5 w-5" />} title="Scan your table QR" body="Your live bill appears in seconds. No waiting for the server." />
           <Feature icon={<Split className="h-5 w-5" />} title="Split your way" body="Pay everything, split by item, or split equally between friends." />
           <Feature icon={<Sparkles className="h-5 w-5" />} title="Tap to pay" body="Apple Pay, Google Pay or card. Digital receipt instantly." />
         </section>
