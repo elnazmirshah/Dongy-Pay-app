@@ -128,7 +128,8 @@ function ReceiptPage() {
         </motion.div>
 
         <Link
-          to="/"
+          to="/t/$tableId"
+          params={{ tableId }}
           className="mx-auto flex w-fit items-center gap-2 rounded-full border border-border bg-card px-5 py-3 text-sm font-medium text-foreground hover:bg-muted"
         >
           <Home className="h-4 w-4" /> {t.done}
