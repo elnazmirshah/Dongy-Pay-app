@@ -58,9 +58,13 @@ Deno.serve(async (req: Request) => {
     const methods = new Set(["apple_pay", "google_pay", "debit_card", "credit_card"]);
     if (!methods.has(body.method)) return json({ error: "Invalid payment method" }, 400);
 
-    const { data, error } = await admin.rpc("process_bill_payment", {
+    const counts = new Map<string, number>();
+    for (const id of body.itemIds) counts.set(id, (counts.get(id) ?? 0) + 1);
+    const items = Array.from(counts, ([id, qty]) => ({ id, qty }));
+
+    const { data, error } = await admin.rpc("process_bill_payment_quantities", {
       p_bill_id: body.billId,
-      p_item_ids: body.itemIds,
+      p_items: items,
       p_tip: body.tip,
       p_method: body.method,
       p_payer_label: body.payerLabel?.slice(0, 60) ?? null,
