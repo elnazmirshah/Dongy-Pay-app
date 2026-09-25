@@ -122,12 +122,15 @@ export const getActiveBill = createServerFn({ method: "GET" })
     return {
       table,
       bill,
-      items: (items ?? []).map((it) => ({
-        ...it,
-        qty: Number(it.qty),
-        paid_qty: Number(it.paid_qty ?? (it.paid_by ? it.qty : 0)),
-        unit_price: Number(it.unit_price),
-      })) as BillItem[],
+      items: (items ?? []).map((it) => {
+        const row = it as typeof it & { paid_qty?: number };
+        return {
+          ...row,
+          qty: Number(row.qty),
+          paid_qty: Number(row.paid_qty ?? (row.paid_by ? row.qty : 0)),
+          unit_price: Number(row.unit_price),
+        };
+      }) as BillItem[],
     };
   });
 
