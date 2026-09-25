@@ -9,6 +9,7 @@ export type BillItem = {
   name_fa: string | null;
   name_nl: string | null;
   qty: number;
+  paid_qty: number;
   unit_price: number;
   paid_by: string | null;
   paid_at: string | null;
@@ -63,8 +64,6 @@ export const resetDemoBill = createServerFn({ method: "POST" })
       .maybeSingle();
     if (openBillError) throw new Error(openBillError.message);
 
-    // Keep the current demo bill while it still has unpaid items.
-    // The database closes the bill automatically after the final item is paid.
     if (openBill) return { ok: true };
 
     const { data: result, error } = await supabaseServer.functions.invoke("bill-actions", {
@@ -99,8 +98,6 @@ export const getActiveBill = createServerFn({ method: "GET" })
       .maybeSingle();
     if (bErr) throw new Error(bErr.message);
 
-    // For the demo table, keep the just-completed bill available long enough
-    // to show the success and rating screen. The next visit resets the demo.
     if (!bill && data.tableNumber === "5") {
       const { data: latestBill, error: latestBillError } = await supabaseServer
         .from("bills")
@@ -127,6 +124,8 @@ export const getActiveBill = createServerFn({ method: "GET" })
       bill,
       items: (items ?? []).map((it) => ({
         ...it,
+        qty: Number(it.qty),
+        paid_qty: Number(it.paid_qty ?? (it.paid_by ? it.qty : 0)),
         unit_price: Number(it.unit_price),
       })) as BillItem[],
     };
