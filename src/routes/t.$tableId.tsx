@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -27,6 +27,13 @@ export const Route = createFileRoute("/t/$tableId")({ component: TablePage });
 
 type Step = "selection" | "tip" | "payment" | "success";
 type PaymentMethod = "apple_pay" | "google_pay" | "debit_card" | "credit_card" | "cash";
+type PaymentResult = {
+  paidSubtotal: number;
+  paidTip: number;
+  paidTotal: number;
+  method: PaymentMethod;
+  completedBill: boolean;
+};
 
 function TablePage() {
   const { tableId } = Route.useParams();
@@ -44,7 +51,7 @@ function TablePage() {
   const [tip, setTip] = useState(0);
   const [paying, setPaying] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState<"apple_pay" | "ideal" | "card" | "cash">("apple_pay");
-  const [paymentResult, setPaymentResult] = useState<{ paidSubtotal: number; paidTip: number; paidTotal: number; method: PaymentMethod } | null>(null);
+  const [paymentResult, setPaymentResult] = useState<PaymentResult | null>(null);
   const [rating, setRating] = useState(0);
 
   useEffect(() => {
@@ -133,6 +140,10 @@ function TablePage() {
       toast.success(t.staffNotified, { duration: 4500 });
       return;
     }
+
+    const unpaidIds = snapshot.items.filter((item) => !item.paid_by).map((item) => item.id);
+    const completesBill = unpaidIds.length > 0 && unpaidIds.every((id) => itemIdsForPayment.includes(id));
+
     setPaying(true);
     try {
       await new Promise((resolve) => setTimeout(resolve, 700));
@@ -149,14 +160,38 @@ function TablePage() {
         paidTip: Number(result.tip),
         paidTotal: Number(result.total),
         method,
+        completedBill: completesBill,
       });
-      void reload();
+      await reload();
       goNext("success");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Payment failed");
     } finally {
       setPaying(false);
     }
+  };
+
+  const handleDone = async () => {
+    if (paymentResult?.completedBill) {
+      try {
+        await reset({ data: { tableNumber: tableId } });
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Failed to reset demo bill");
+        return;
+      }
+    }
+
+    await reload();
+    setSelectedQty(new Map());
+    setMode("item");
+    setPeople(2);
+    setShares(1);
+    setTip(0);
+    setSelectedMethod("apple_pay");
+    setPaymentResult(null);
+    setRating(0);
+    setDirection(-1);
+    setStep("selection");
   };
 
   const slideVariants = {
@@ -333,9 +368,9 @@ function TablePage() {
                   </a>
                 </div>
 
-                <Link to="/" className="mx-auto flex w-fit items-center gap-2 rounded-full border border-border bg-card px-5 py-3 text-sm font-medium text-foreground hover:bg-muted">
+                <button type="button" onClick={() => void handleDone()} className="mx-auto flex w-fit items-center gap-2 rounded-full border border-border bg-card px-5 py-3 text-sm font-medium text-foreground hover:bg-muted">
                   <Home className="h-4 w-4" /> {t.done}
-                </Link>
+                </button>
               </motion.div>
             )}
           </AnimatePresence>
