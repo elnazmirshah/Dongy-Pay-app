@@ -46,6 +46,27 @@ export const resetDemoBill = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     if (data.tableNumber !== "5") return { ok: false };
 
+    const { data: table, error: tableError } = await supabaseServer
+      .from("restaurant_tables")
+      .select("id")
+      .eq("table_number", data.tableNumber)
+      .maybeSingle();
+    if (tableError) throw new Error(tableError.message);
+    if (!table) return { ok: false };
+
+    const { data: openBill, error: openBillError } = await supabaseServer
+      .from("bills")
+      .select("id")
+      .eq("table_id", table.id)
+      .eq("status", "open")
+      .limit(1)
+      .maybeSingle();
+    if (openBillError) throw new Error(openBillError.message);
+
+    // Keep the current demo bill while it still has unpaid items.
+    // The database closes the bill automatically after the final item is paid.
+    if (openBill) return { ok: true };
+
     const { data: result, error } = await supabaseServer.functions.invoke("bill-actions", {
       body: { action: "reset_demo", tableNumber: data.tableNumber },
     });
@@ -68,7 +89,7 @@ export const getActiveBill = createServerFn({ method: "GET" })
     if (tErr) throw new Error(tErr.message);
     if (!table) return null;
 
-    const { data: bill, error: bErr } = await supabaseServer
+    let { data: bill, error: bErr } = await supabaseServer
       .from("bills")
       .select("id, status")
       .eq("table_id", table.id)
@@ -77,6 +98,21 @@ export const getActiveBill = createServerFn({ method: "GET" })
       .limit(1)
       .maybeSingle();
     if (bErr) throw new Error(bErr.message);
+
+    // For the demo table, keep the just-completed bill available long enough
+    // to show the success and rating screen. The next visit resets the demo.
+    if (!bill && data.tableNumber === "5") {
+      const { data: latestBill, error: latestBillError } = await supabaseServer
+        .from("bills")
+        .select("id, status")
+        .eq("table_id", table.id)
+        .order("opened_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (latestBillError) throw new Error(latestBillError.message);
+      bill = latestBill;
+    }
+
     if (!bill) return null;
 
     const { data: items, error: iErr } = await supabaseServer
