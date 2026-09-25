@@ -172,7 +172,7 @@ export function MockPaymentSheet({ total, onPay }: Props) {
             />
           </div>
           <p className="text-[11px] text-muted-foreground">
-            Demo only — no real card is charged.
+            Demo only. No real card is charged.
           </p>
         </motion.div>
       )}
