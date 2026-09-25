@@ -13,7 +13,10 @@ type Props = {
 
 export function BillItemCard({ item, selectedQty, onChangeQty, disabled }: Props) {
   const { t, lang } = useI18n();
-  const isPaid = !!item.paid_by;
+  const paidQty = Math.min(item.paid_qty ?? 0, item.qty);
+  const remainingQty = Math.max(0, item.qty - paidQty);
+  const isPaid = remainingQty === 0;
+  const isPartiallyPaid = paidQty > 0 && !isPaid;
   const lineTotal = item.unit_price * item.qty;
   const interactive = !isPaid && !disabled;
   const isMulti = item.qty > 1;
@@ -50,7 +53,12 @@ export function BillItemCard({ item, selectedQty, onChangeQty, disabled }: Props
           </div>
           {isPaid && (
             <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 text-[11px] font-medium text-success">
-              <Check className="h-3 w-3" /> {t.paid} · {item.paid_by}
+              <Check className="h-3 w-3" /> {t.paid} · {item.paid_by ?? "Guest"}
+            </div>
+          )}
+          {isPartiallyPaid && (
+            <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 text-[11px] font-medium text-success">
+              <Check className="h-3 w-3" /> {paidQty} of {item.qty} {t.paid.toLowerCase()}
             </div>
           )}
         </div>
@@ -78,8 +86,8 @@ export function BillItemCard({ item, selectedQty, onChangeQty, disabled }: Props
                 </span>
                 <button
                   type="button"
-                  disabled={!interactive || selectedQty >= item.qty}
-                  onClick={() => onChangeQty(Math.min(item.qty, selectedQty + 1))}
+                  disabled={!interactive || selectedQty >= remainingQty}
+                  onClick={() => onChangeQty(Math.min(remainingQty, selectedQty + 1))}
                   className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-40"
                   aria-label="Increase"
                 >
